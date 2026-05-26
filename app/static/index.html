@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claims Agentic AI MVP</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1d2733;
+      --muted: #647084;
+      --line: #d9dee7;
+      --accent: #116a7b;
+      --accent-dark: #0b4e5b;
+      --ok: #146c43;
+      --warn: #a15c07;
+      --danger: #b42318;
+      --shadow: 0 12px 36px rgba(25, 36, 52, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--warn);
+    }
+
+    .dot.ready {
+      background: var(--ok);
+    }
+
+    main {
+      padding: 28px 0 40px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .panel-body {
+      padding: 18px 20px 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    select,
+    input {
+      width: 100%;
+      height: 42px;
+      border: 1px solid #b9c2d0;
+      border-radius: 6px;
+      padding: 0 12px;
+      color: var(--text);
+      background: #fff;
+      font-size: 15px;
+    }
+
+    select:focus,
+    input:focus {
+      outline: 3px solid rgba(17, 106, 123, 0.18);
+      border-color: var(--accent);
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0 14px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    button.primary {
+      flex: 1;
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      background: var(--accent-dark);
+    }
+
+    button.secondary {
+      background: #fff;
+      border-color: #b9c2d0;
+      color: var(--text);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    .claim-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+      padding: 14px;
+    }
+
+    .claim-card h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+
+    .claim-card p {
+      margin: 0 0 12px;
+      color: var(--muted);
+    }
+
+    .facts,
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .fact,
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .fact span,
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .fact strong,
+    .metric strong {
+      display: block;
+      margin-top: 2px;
+      overflow-wrap: anywhere;
+      font-size: 14px;
+    }
+
+    .result-empty {
+      padding: 34px 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .result-content {
+      display: grid;
+      gap: 16px;
+    }
+
+    .result-block {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .result-block h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .agent-flow {
+      display: grid;
+      gap: 10px;
+    }
+
+    .agent-step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfd;
+    }
+
+    .agent-index {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .agent-main h4 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .agent-main p {
+      margin: 4px 0 9px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .detail-card {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .detail-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .detail-card strong {
+      display: block;
+      margin-top: 2px;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+    }
+
+    .badge-row,
+    .list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #eef7f8;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .badge.warn {
+      background: #fff4df;
+      color: var(--warn);
+    }
+
+    .badge.danger {
+      background: #fee4e2;
+      color: var(--danger);
+    }
+
+    .badge.ok {
+      background: #eaf6ef;
+      color: var(--ok);
+    }
+
+    pre {
+      max-height: 360px;
+      margin: 0;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #101828;
+      color: #f2f4f7;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .error {
+      margin-top: 14px;
+      border: 1px solid #f2b8b5;
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #fff2f1;
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    @media (max-width: 840px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        padding: 14px 0;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+      }
+
+      .facts,
+      .summary-grid,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <h1>Claims Agentic AI MVP</h1>
+      <div class="status" aria-live="polite">
+        <span class="dot" id="healthDot"></span>
+        <span id="healthText">Checking API</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="layout">
+      <section>
+        <div class="panel-header">
+          <h2>Submit Claim</h2>
+        </div>
+        <div class="panel-body">
+          <div class="field">
+            <label for="claimLimit">Claims to load</label>
+            <input id="claimLimit" type="number" min="1" max="500" value="50">
+          </div>
+          <div class="field">
+            <label for="claimSelect">Claim from data/claims</label>
+            <select id="claimSelect"></select>
+          </div>
+          <div id="claimPreview" class="claim-card hidden"></div>
+          <div class="actions">
+            <button class="secondary" id="reloadBtn" type="button">Reload</button>
+            <button class="primary" id="runBtn" type="button">Run Workflow</button>
+          </div>
+          <div id="formError" class="error hidden"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="panel-header">
+          <h2>Workflow Results</h2>
+        </div>
+        <div class="panel-body">
+          <div id="emptyState" class="result-empty">Choose a claim and run the workflow.</div>
+          <div id="resultContent" class="result-content hidden"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const healthDot = document.getElementById("healthDot");
+    const healthText = document.getElementById("healthText");
+    const claimLimit = document.getElementById("claimLimit");
+    const claimSelect = document.getElementById("claimSelect");
+    const claimPreview = document.getElementById("claimPreview");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const runBtn = document.getElementById("runBtn");
+    const formError = document.getElementById("formError");
+    const emptyState = document.getElementById("emptyState");
+    const resultContent = document.getElementById("resultContent");
+
+    let claims = [];
+
+    function money(value) {
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: "GBP"
+      }).format(Number(value || 0));
+    }
+
+    function titleCase(value) {
+      return String(value || "unknown").replaceAll("_", " ");
+    }
+
+    function readableValue(value) {
+      if (value === null || value === undefined || value === "") {
+        return "None";
+      }
+
+      if (Array.isArray(value)) {
+        return value.length ? value.map(readableValue).join("; ") : "None";
+      }
+
+      if (typeof value === "object") {
+        return Object.entries(value)
+          .map(([key, item]) => `${titleCase(key)}: ${readableValue(item)}`)
+          .join("; ");
+      }
+
+      return String(value);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setLoading(isLoading) {
+      reloadBtn.disabled = isLoading;
+      runBtn.disabled = isLoading || !claimSelect.value;
+      runBtn.textContent = isLoading ? "Running..." : "Run Workflow";
+    }
+
+    function showError(message) {
+      formError.textContent = message;
+      formError.classList.remove("hidden");
+    }
+
+    function clearError() {
+      formError.textContent = "";
+      formError.classList.add("hidden");
+    }
+
+    async function fetchJson(url, options) {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        let detail = response.statusText;
+        try {
+          const payload = await response.json();
+          detail = payload.detail || JSON.stringify(payload);
+        } catch (_) {
+          detail = await response.text();
+        }
+        throw new Error(detail || `Request failed with status ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function checkHealth() {
+      try {
+        const health = await fetchJson("/health");
+        healthDot.classList.add("ready");
+        healthText.textContent = `API ready (${health.use_groq ? "Groq" : "mock LLM"})`;
+      } catch (error) {
+        healthDot.classList.remove("ready");
+        healthText.textContent = "API unavailable";
+      }
+    }
+
+    async function loadClaims() {
+      clearError();
+      setLoading(true);
+      claimSelect.innerHTML = "<option value=\"\">Loading claims...</option>";
+      claimPreview.classList.add("hidden");
+
+      try {
+        const limit = Math.min(Math.max(Number(claimLimit.value) || 50, 1), 500);
+        claimLimit.value = limit;
+        claims = await fetchJson(`/claims?limit=${encodeURIComponent(limit)}`);
+        claimSelect.innerHTML = "";
+
+        if (!claims.length) {
+          claimSelect.innerHTML = "<option value=\"\">No claims found</option>";
+          showError("No claims were found. Run scripts/generate_data.py first.");
+          return;
+        }
+
+        for (const claim of claims) {
+          const option = document.createElement("option");
+          option.value = claim.claim_id;
+          option.textContent = `${claim.claim_id} | ${claim.product_type} | ${money(claim.claim_amount)}`;
+          claimSelect.appendChild(option);
+        }
+        renderClaimPreview();
+      } catch (error) {
+        claimSelect.innerHTML = "<option value=\"\">Unable to load claims</option>";
+        showError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function selectedClaim() {
+      return claims.find((claim) => claim.claim_id === claimSelect.value);
+    }
+
+    function renderClaimPreview() {
+      const claim = selectedClaim();
+      if (!claim) {
+        claimPreview.classList.add("hidden");
+        return;
+      }
+
+      claimPreview.innerHTML = `
+        <h3>${escapeHtml(claim.claim_id)}</h3>
+        <p>${escapeHtml(claim.fnol_text)}</p>
+        <div class="facts">
+          <div class="fact"><span>Policy</span><strong>${escapeHtml(claim.policy_id)}</strong></div>
+          <div class="fact"><span>Product</span><strong>${escapeHtml(titleCase(claim.product_type))}</strong></div>
+          <div class="fact"><span>Amount</span><strong>${escapeHtml(money(claim.claim_amount))}</strong></div>
+          <div class="fact"><span>Documents</span><strong>${escapeHtml((claim.documents || []).length)}</strong></div>
+          <div class="fact"><span>Segment</span><strong>${escapeHtml(titleCase(claim.customer_segment))}</strong></div>
+          <div class="fact"><span>Claims in 12m</span><strong>${escapeHtml(claim.claims_last_12_months)}</strong></div>
+        </div>
+      `;
+      claimPreview.classList.remove("hidden");
+      setLoading(false);
+    }
+
+    function badge(value, tone = "") {
+      const cls = tone ? `badge ${tone}` : "badge";
+      return `<span class="${cls}">${escapeHtml(value)}</span>`;
+    }
+
+    function renderList(items, emptyText, tone = "") {
+      if (!items || !items.length) {
+        return badge(emptyText, "ok");
+      }
+      return items.map((item) => badge(item, tone)).join("");
+    }
+
+    function detailCard(label, value) {
+      return `
+        <div class="detail-card">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value || "None")}</strong>
+        </div>
+      `;
+    }
+
+    function renderDocumentCards(extracted) {
+      if (!extracted || !extracted.length) {
+        return badge("No documents reviewed", "warn");
+      }
+
+      return `
+        <div class="detail-grid">
+          ${extracted.map((doc) => `
+            <div class="detail-card">
+              <span>${escapeHtml(doc.document_type || "document")}</span>
+              <strong>${escapeHtml(doc.document_id || "Unknown document")}</strong>
+              <span>Amount</span>
+              <strong>${escapeHtml(doc.amount ? money(doc.amount) : "Not supplied")}</strong>
+              <span>Reference</span>
+              <strong>${escapeHtml(doc.reference || "Not supplied")}</strong>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderPolicyClauses(clauses) {
+      if (!clauses || !clauses.length) {
+        return badge("No policy clauses retrieved", "warn");
+      }
+
+      return `
+        <div class="detail-grid">
+          ${clauses.slice(0, 6).map((clause) => `
+            <div class="detail-card">
+              <span>${escapeHtml(clause.section || "Policy clause")}</span>
+              <strong>${escapeHtml(clause.source_file || clause.chunk_id || "Unknown source")}</strong>
+              <span>Score</span>
+              <strong>${escapeHtml(clause.score === undefined ? "Not scored" : Number(clause.score).toFixed(3))}</strong>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderAgentWorkflow(result, response) {
+      const triage = result.triage_summary || {};
+      const evidence = result.evidence_review || {};
+      const recommendation = result.handler_recommendation || {};
+      const clauses = result.retrieved_policy_clauses || [];
+      const missingInformation = evidence.missing_information || triage.missing_information || [];
+      const conflicts = evidence.conflicts || [];
+      const steps = [
+        {
+          name: "Claims Triage Agent",
+          handled: "Read FNOL and structured claim fields.",
+          outputs: [
+            `Type: ${titleCase(result.claim_type)}`,
+            `Urgency: ${titleCase(result.urgency)}`,
+            `Complexity: ${titleCase(result.complexity)}`,
+            `Confidence: ${triage.confidence ?? "not returned"}`
+          ]
+        },
+        {
+          name: "Policy Coverage Agent",
+          handled: "Built a policy search query, retrieved clauses from Qdrant, and summarized coverage context.",
+          outputs: [
+            `Clauses retrieved: ${clauses.length}`,
+            `Coverage: ${readableValue(result.coverage_summary || "handler review required")}`
+          ]
+        },
+        {
+          name: "Evidence Review Agent",
+          handled: "Loaded supporting documents for the selected claim and checked missing evidence and conflicts.",
+          outputs: [
+            `Documents reviewed: ${evidence.documents_reviewed ?? 0}`,
+            `Document types: ${(evidence.document_types || []).join(", ") || "none"}`,
+            `Missing: ${missingInformation.join(", ") || "none"}`,
+            `Conflicts: ${conflicts.length}`
+          ]
+        },
+        {
+          name: "Risk Screening Agent",
+          handled: "Applied deterministic risk rules to claim amount, history, timing, and evidence signals.",
+          outputs: [
+            `Risk level: ${titleCase(result.risk_level)}`,
+            `Risk score: ${result.risk_score ?? "not scored"}`,
+            `Risk flags: ${(result.risk_flags || []).join(", ") || "none"}`,
+            `Fraud referral: ${result.fraud_referral_required ? "yes" : "no"}`
+          ]
+        },
+        {
+          name: "Handler Recommendation Agent",
+          handled: "Combined triage, coverage, evidence, and risk into next-best handler action.",
+          outputs: [
+            `Evidence status: ${titleCase(recommendation.evidence_status)}`,
+            `Action: ${recommendation.recommended_action || "No action returned"}`
+          ]
+        },
+        {
+          name: "Output Guardrails",
+          handled: "Checked the output avoids final claim decisions and routes risky cases to human review.",
+          outputs: [
+            `Final status: ${response.status || result.final_status || "completed"}`,
+            `Human approval: ${result.human_approval_required ? "required" : "not required"}`,
+            `Fallback reason: ${result.fallback_reason || "none"}`
+          ]
+        }
+      ];
+
+      return `
+        <div class="agent-flow">
+          ${steps.map((step, index) => `
+            <div class="agent-step">
+              <div class="agent-index">${index + 1}</div>
+              <div class="agent-main">
+                <h4>${escapeHtml(step.name)}</h4>
+                <p>${escapeHtml(step.handled)}</p>
+                <div class="badge-row">
+                  ${step.outputs.map((item) => badge(item)).join("")}
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderResult(response) {
+      const result = response.result || {};
+      const triage = result.triage_summary || {};
+      const approvalTone = result.human_approval_required ? "warn" : "ok";
+      const riskTone = (result.risk_flags || []).length ? "danger" : "ok";
+      const recommendation = result.handler_recommendation || {};
+      const missingInformation = (result.evidence_review && result.evidence_review.missing_information) || triage.missing_information || [];
+      const incidentSummary = triage.incident_summary || result.incident_summary || "No summary returned.";
+      const route = result.fraud_referral_required ? "fraud or specialist review" : response.status;
+
+      emptyState.classList.add("hidden");
+      resultContent.innerHTML = `
+        <div class="summary-grid">
+          <div class="metric"><span>Status</span><strong>${escapeHtml(response.status || "completed")}</strong></div>
+          <div class="metric"><span>Claim type</span><strong>${escapeHtml(titleCase(result.claim_type))}</strong></div>
+          <div class="metric"><span>Urgency</span><strong>${escapeHtml(titleCase(result.urgency))}</strong></div>
+          <div class="metric"><span>Complexity</span><strong>${escapeHtml(titleCase(result.complexity))}</strong></div>
+        </div>
+
+        <div class="result-block">
+          <h3>Agent Workflow</h3>
+          ${renderAgentWorkflow(result, response)}
+        </div>
+
+        <div class="result-block">
+          <h3>Recommendation</h3>
+          <div class="badge-row">
+            ${badge(result.human_approval_required ? "Human approval required" : "No approval flag", approvalTone)}
+            ${badge(`Route: ${titleCase(route)}`)}
+            ${badge(`Evidence: ${titleCase(recommendation.evidence_status)}`)}
+            ${badge(`Risk: ${titleCase(recommendation.risk_level || result.risk_level)}`)}
+          </div>
+          <p>${escapeHtml(recommendation.recommended_action || "No action returned.")}</p>
+        </div>
+
+        <div class="result-block">
+          <h3>Incident Summary</h3>
+          <p>${escapeHtml(incidentSummary)}</p>
+        </div>
+
+        <div class="result-block">
+          <h3>Document Workflow</h3>
+          <div class="summary-grid">
+            ${detailCard("Documents reviewed", (result.evidence_review || {}).documents_reviewed ?? 0)}
+            ${detailCard("Document types", ((result.evidence_review || {}).document_types || []).join(", ") || "None")}
+            ${detailCard("Critical conflicts", (result.evidence_review || {}).critical_conflicts ? "Yes" : "No")}
+            ${detailCard("Evidence confidence", (result.evidence_review || {}).confidence ?? "Not scored")}
+          </div>
+          <div style="height: 12px;"></div>
+          ${renderDocumentCards((result.evidence_review || {}).extracted)}
+        </div>
+
+        <div class="result-block">
+          <h3>Policy Retrieval</h3>
+          <p>${escapeHtml(readableValue(result.coverage_summary || "No coverage summary returned."))}</p>
+          ${renderPolicyClauses(result.retrieved_policy_clauses)}
+        </div>
+
+        <div class="result-block">
+          <h3>Risk Flags</h3>
+          <div class="list">${renderList(result.risk_flags, "No risk flags", riskTone)}</div>
+        </div>
+
+        <div class="result-block">
+          <h3>Missing Information</h3>
+          <div class="list">${renderList(missingInformation, "No missing information")}</div>
+        </div>
+
+        <div class="result-block">
+          <h3>Raw Response</h3>
+          <pre>${escapeHtml(JSON.stringify(response, null, 2))}</pre>
+        </div>
+      `;
+      resultContent.classList.remove("hidden");
+    }
+
+    async function runWorkflow() {
+      const claim = selectedClaim();
+      if (!claim) {
+        showError("Select a claim first.");
+        return;
+      }
+
+      clearError();
+      setLoading(true);
+      emptyState.classList.remove("hidden");
+      emptyState.textContent = `Running workflow for ${claim.claim_id}...`;
+      resultContent.classList.add("hidden");
+
+      try {
+        const response = await fetchJson(`/claims/${encodeURIComponent(claim.claim_id)}/run`, {
+          method: "POST"
+        });
+        renderResult(response);
+      } catch (error) {
+        emptyState.textContent = "Choose a claim and run the workflow.";
+        showError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    reloadBtn.addEventListener("click", loadClaims);
+    claimSelect.addEventListener("change", renderClaimPreview);
+    runBtn.addEventListener("click", runWorkflow);
+
+    checkHealth();
+    loadClaims();
+  </script>
+</body>
+</html>
