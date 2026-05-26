@@ -33,8 +33,8 @@ sequenceDiagram
     Ev-->>Graph: Missing/conflicting info
     Graph->>Risk: Feature/rule scoring
     Risk-->>Graph: Risk level and flags
-    Graph->>Rec: Generate handler recommendation
-    Rec-->>Graph: Recommendation and human approval flag
+    Graph->>Rec: Select deterministic route and draft handler guidance
+    Rec-->>Graph: Recommendation, rationale, questions, document requests and approval flag
     Graph->>Guard: Validate output guardrails
     Guard-->>Graph: Final status and approval flag
     Graph->>API: Final result
@@ -48,6 +48,8 @@ sequenceDiagram
 - Embeddings use a local hashing embedder to avoid Python 3.14 native dependency problems.
 - LangGraph is attempted first. If your Python 3.14 environment has dependency issues, the app falls back to a simple graph runner with the same nodes.
 - LangSmith decorators are optional. If configured, traces are sent to your LangSmith project.
+- The Handler Recommendation Agent keeps routing deterministic, then uses the LLM only to draft handler-facing guidance inside that route.
+- Recommendation draft arrays are normalized to plain strings so nested model objects do not leak into the UI.
 - The browser UI is static HTML/CSS/JavaScript served by FastAPI from `app/static/index.html`.
 - The UI visualizes the multi-agent architecture with agent-level outputs, document review details, policy retrieval details and raw JSON.
 
@@ -69,7 +71,10 @@ sequenceDiagram
    - Flags high frequency, inflated cost, early policy claim, duplicate invoice, and date conflicts.
 
 5. Handler Recommendation Agent
-   - Produces final handler-facing recommendation.
+   - Selects the deterministic handler route from fraud referral, conflicts, missing evidence, policy retrieval and manual-review conditions.
+   - Calls the LLM to draft a natural handler-facing recommendation within that allowed route.
+   - Returns rationale, supporting evidence, weakening evidence, relevant policy clauses, customer questions, missing documents to request, specialist review status and draft confidence.
+   - Replaces unsafe AI draft text with a deterministic fallback if the draft contains final decision language.
    - Does not make final settlement decisions.
 
 6. Output Guardrails

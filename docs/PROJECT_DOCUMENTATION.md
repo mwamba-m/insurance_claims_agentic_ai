@@ -129,16 +129,37 @@ File: `app/agents/recommendation_agent.py`
 Purpose:
 
 - Combines triage, coverage, evidence, and risk context.
-- Produces a handler-facing recommendation.
+- Selects a deterministic route before any AI drafting occurs.
+- Uses the LLM to draft a handler-facing explanation within the allowed deterministic route.
+- Explains what the handler should do next, why, which evidence supports or weakens the claim, which policy clauses matter, what questions to ask, what documents to request, and whether specialist review is needed.
 - Avoids final settlement decisions.
 
 Important output fields:
 
 - `handler_recommendation`
+- `handler_recommendation.deterministic_route`
 - `handler_recommendation.recommended_action`
+- `handler_recommendation.recommendation_summary`
+- `handler_recommendation.rationale`
+- `handler_recommendation.supporting_evidence`
+- `handler_recommendation.weakening_evidence`
+- `handler_recommendation.relevant_policy_clauses`
+- `handler_recommendation.customer_questions`
+- `handler_recommendation.missing_documents_to_request`
+- `handler_recommendation.specialist_review_needed`
+- `handler_recommendation.recommendation_confidence`
+- `handler_recommendation.ai_drafted`
 - `handler_recommendation.evidence_status`
 - `handler_recommendation.top_policy_citations`
 - `final_status`
+
+Control constraints:
+
+- If `fraud_referral_required` is true, the deterministic route is fraud or specialist review and the AI draft cannot recommend normal progression.
+- If evidence is missing or conflicting, `evidence_status` remains incomplete and missing documents are preserved in `missing_documents_to_request`.
+- If no policy clauses were retrieved, the AI draft is not allowed to present policy confidence or relevant policy citations.
+- If the AI draft contains final decision language, the recommendation agent replaces it with a deterministic fallback draft.
+- Output guardrails still run after recommendation drafting and can require human approval.
 
 ### Output Guardrails
 
@@ -377,6 +398,8 @@ Key settings:
 - `app/agents/workflow.py` attempts LangGraph first.
 - If LangGraph cannot run in the local environment, the fallback runner executes the same nodes in order.
 - The policy retrieval stack uses a local deterministic hashing embedder to avoid native embedding dependency issues.
+- The handler recommendation route is deterministic, but the explanation is AI-drafted when LLM mode is enabled. Mock mode returns deterministic draft text for local testing.
+- Recommendation list outputs are normalized to human-readable strings so model-returned objects do not appear as raw JSON in the UI.
 - The browser UI is intentionally static and framework-free, so no frontend build command is required.
 - The UI calls same-origin API paths, so it works when served by FastAPI at `/`.
 

@@ -500,6 +500,32 @@
       return String(value);
     }
 
+    function humanizeRecommendationItem(item) {
+      if (item === null || item === undefined || item === "") {
+        return "";
+      }
+      if (typeof item !== "object") {
+        return readableValue(item);
+      }
+      const direct = item.summary || item.question || item.text || item.sentence || item.value;
+      if (direct) {
+        return readableValue(direct);
+      }
+      const description = item.description ? readableValue(item.description) : "";
+      const detail = item.data ? readableValue(item.data) : "";
+      const itemType = item.type ? readableValue(item.type) : "";
+      if (description && detail) {
+        return `${description}: ${detail}.`;
+      }
+      if (description) {
+        return `${description}.`;
+      }
+      if (itemType && detail) {
+        return `${itemType}: ${detail}.`;
+      }
+      return readableValue(item);
+    }
+
     function escapeHtml(value) {
       return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -623,6 +649,17 @@
       return items.map((item) => badge(item, tone)).join("");
     }
 
+    function renderBullets(items, emptyText) {
+      if (!items || !items.length) {
+        return `<p>${escapeHtml(emptyText)}</p>`;
+      }
+      return `
+        <ul>
+          ${items.map((item) => `<li>${escapeHtml(humanizeRecommendationItem(item))}</li>`).join("")}
+        </ul>
+      `;
+    }
+
     function detailCard(label, value) {
       return `
         <div class="detail-card">
@@ -720,10 +757,11 @@
         },
         {
           name: "Handler Recommendation Agent",
-          handled: "Combined triage, coverage, evidence, and risk into next-best handler action.",
+          handled: "Selected a deterministic route, then drafted handler-facing guidance within that route.",
           outputs: [
             `Evidence status: ${titleCase(recommendation.evidence_status)}`,
-            `Action: ${recommendation.recommended_action || "No action returned"}`
+            `Action: ${recommendation.recommended_action || "No action returned"}`,
+            `AI draft: ${recommendation.ai_drafted ? "yes" : "fallback"}`
           ]
         },
         {
@@ -788,6 +826,16 @@
             ${badge(`Risk: ${titleCase(recommendation.risk_level || result.risk_level)}`)}
           </div>
           <p>${escapeHtml(recommendation.recommended_action || "No action returned.")}</p>
+          <p>${escapeHtml(recommendation.recommendation_summary || "")}</p>
+          <p>${escapeHtml(recommendation.rationale || "")}</p>
+          <h4>Supporting Evidence</h4>
+          ${renderBullets(recommendation.supporting_evidence, "No supporting evidence summary returned.")}
+          <h4>Weakening Evidence</h4>
+          ${renderBullets(recommendation.weakening_evidence, "No weakening evidence summary returned.")}
+          <h4>Customer Questions</h4>
+          ${renderBullets(recommendation.customer_questions, "No customer questions returned.")}
+          <h4>Missing Documents To Request</h4>
+          ${renderBullets(recommendation.missing_documents_to_request, "No missing document requests returned.")}
         </div>
 
         <div class="result-block">
